@@ -184,7 +184,7 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
         joinFactorsByVariable
         joinFactors
         """
-
+        from bayesNet import normalize, Factor 
         # this is for autograding -- don't modify
         joinFactorsByVariable = joinFactorsByVariableWithCallTracking(callTrackingList)
         eliminate             = eliminateWithCallTracking(callTrackingList)
@@ -194,13 +194,50 @@ def inferenceByVariableEliminationWithCallTracking(callTrackingList=None):
             eliminationOrder = sorted(list(eliminationVariables))
 
         "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        factors = bayesNet.getAllCPTsWithEvidence(evidenceDict)
 
+    # Process each variable in the elimination order
+        if not factors:
+            print("Warning: No factors available after applying evidence.")
+            return None
 
+        for var in eliminationOrder:
+            if var not in queryVariables and var not in evidenceDict:
+                relevant_factors = [f for f in factors if var in f.variablesSet()]
+                if not relevant_factors:
+                    print(f"Warning: No factors found containing the variable {var}.")
+                    continue
+
+                _, joined_factor = joinFactorsByVariable(relevant_factors, var)
+                if joined_factor is None:
+                    print(f"Warning: Failed to join factors on variable {var}.")
+                    continue
+
+                if len(joined_factor.unconditionedVariables()) > 1 or var in joined_factor.conditionedVariables():
+                    new_factor = eliminate(joined_factor, var)
+                    if new_factor is None:
+                        print(f"Warning: Elimination of variable {var} failed.")
+                        continue
+                    factors = [f for f in factors if var not in f.variablesSet()] + [new_factor]
+                else:
+                    factors = [f for f in factors if var not in f.variablesSet()] + [joined_factor]
+
+        if not factors:
+            print("Warning: No factors remain for final join.")
+            return None
+
+        final_factor = joinFactors(factors)
+        if final_factor is None:
+            print("Warning: Final join of factors failed.")
+            return None
+
+        normalized_factor = normalize(final_factor)
+        if normalized_factor is None:
+            print("Warning: Normalization of the final factor failed.")
+            return None
+
+        return normalized_factor
     return inferenceByVariableElimination
-
-inferenceByVariableElimination = inferenceByVariableEliminationWithCallTracking()
 
 def sampleFromFactorRandomSource(randomSource=None):
     if randomSource is None:
@@ -334,9 +371,10 @@ class DiscreteDistribution(dict):
         >>> empty
         {}
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        total_value = self.total()
+        if total_value > 0:
+            for key in self:
+                self[key] /= total_value
 
     def sample(self):
         """
@@ -359,9 +397,17 @@ class DiscreteDistribution(dict):
         >>> round(samples.count('d') * 1.0/N, 1)
         0.0
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        if len(self) == 0:
+            return None
+        
+        # Calculate the cumulative probabilities
+        total = self.total()
+        cumulative = 0
+        r = random.random() * total
+        for key, weight in self.items():
+            cumulative += weight
+            if r < cumulative:
+                return key
 
 
 class InferenceModule:
@@ -434,9 +480,19 @@ class InferenceModule:
         """
         Return the probability P(noisyDistance | pacmanPosition, ghostPosition).
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        if ghostPosition == jailPosition:
+        # If the ghost is in jail, the observation must be None.
+            return 1.0 if noisyDistance is None else 0.0
+
+        if noisyDistance is None:
+        # If noisyDistance is None but the ghost is not in jail, return 0.
+            return 0.0
+
+    # Calculate the true distance from Pacman to the ghost.
+        trueDistance = manhattanDistance(pacmanPosition, ghostPosition)
+
+    # Use the provided function to calculate the probability of noisyDistance given trueDistance.
+        return busters.getObservationProbability(noisyDistance, trueDistance)
 
     def setGhostPosition(self, gameState, ghostPosition, index):
         """
