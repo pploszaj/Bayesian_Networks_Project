@@ -603,9 +603,20 @@ class ExactInference(InferenceModule):
         current position. However, this is not a problem, as Pacman's current
         position is known.
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        pacmanPosition = gameState.getPacmanPosition()
+        jailPosition = self.getJailPosition()
+
+        # Temporary distribution for updated beliefs
+        updatedBeliefs = DiscreteDistribution()
+
+        for pos in self.allPositions:
+            # Get the probability of observing the given distance at this position
+            probObservation = self.getObservationProb(observation, pacmanPosition, pos, jailPosition)
+            # Update the belief for this position
+            updatedBeliefs[pos] = probObservation * self.beliefs[pos]
+
+        # Update the actual beliefs with the new calculated beliefs
+        self.beliefs = updatedBeliefs
         self.beliefs.normalize()
     
     ########### ########### ###########
@@ -621,9 +632,18 @@ class ExactInference(InferenceModule):
         Pacman's current position. However, this is not a problem, as Pacman's
         current position is known.
         """
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
+        allPossible = DiscreteDistribution()
+        for oldPos in self.allPositions:
+            # Get the distribution over new positions for the ghost, given its previous position
+            newPosDist = self.getPositionDistribution(gameState, oldPos)
+
+            # Update the distribution for each new position
+            for newPos, prob in newPosDist.items():
+                allPossible[newPos] += self.beliefs[oldPos] * prob
+
+        # The new beliefs become the current beliefs
+        self.beliefs = allPossible
+        self.beliefs.normalize()
 
     def getBeliefDistribution(self):
         return self.beliefs
