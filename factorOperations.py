@@ -40,7 +40,7 @@ def joinFactorsByVariableWithCallTracking(callTrackingList=None):
         currentFactorsToJoin =    [factor for factor in factors if joinVariable in factor.variablesSet()]
         currentFactorsNotToJoin = [factor for factor in factors if joinVariable not in factor.variablesSet()]
 
-        # typecheck portion
+      
         numVariableOnLeft = len([factor for factor in currentFactorsToJoin if joinVariable in factor.unconditionedVariables()])
         if numVariableOnLeft > 1:
             print("Factor failed joinFactorsByVariable typecheck: ", factor)
@@ -88,7 +88,7 @@ def joinFactors(factors: List[Factor]):
     Factor.variableDomainsDict
     """
 
-    # typecheck portion
+
     setsOfUnconditioned = [set(factor.unconditionedVariables()) for factor in factors]
     if len(factors) > 1:
         intersect = functools.reduce(lambda x, y: x & y, setsOfUnconditioned)
@@ -100,18 +100,14 @@ def joinFactors(factors: List[Factor]):
                     "Input factors: \n" +
                     "\n".join(map(str, factors)))
 
-
-    "*** YOUR CODE HERE ***"
     if not isinstance(factors, list):
         factors = list(factors)
 
     if not factors:
         raise ValueError("No factors provided for joining.")
 
-    # Ensure that variableDomainsDict is called correctly as a method
-    variableDomainsDict = factors[0].variableDomainsDict()  # Call as a method to get the dictionary
+    variableDomainsDict = factors[0].variableDomainsDict()  
 
-    # Calculate new sets of unconditioned and conditioned variables
     unconditioned_vars = set()
     conditioned_vars = set()
     
@@ -119,13 +115,10 @@ def joinFactors(factors: List[Factor]):
         unconditioned_vars.update(factor.unconditionedVariables())
         conditioned_vars.update(factor.conditionedVariables())
     
-    # Remove from conditioned any variable that is unconditioned in the result
     conditioned_vars.difference_update(unconditioned_vars)
     
-    # Create a new factor with these sets and the common variable domains
     new_factor = Factor(unconditioned_vars, conditioned_vars, variableDomainsDict)
 
-    # Calculate the probability for each possible assignment
     for assignment in new_factor.getAllPossibleAssignmentDicts():
         probability_product = 1
         for factor in factors:
@@ -133,7 +126,7 @@ def joinFactors(factors: List[Factor]):
         new_factor.setProbability(assignment, probability_product)
     
     return new_factor
-    "*** END YOUR CODE HERE ***"
+
 
 ########### ########### ###########
 ########### QUESTION 3  ###########
@@ -167,7 +160,7 @@ def eliminateWithCallTracking(callTrackingList=None):
         if not (callTrackingList is None):
             callTrackingList.append(('eliminate', eliminationVariable))
 
-        # typecheck portion
+        
         if eliminationVariable not in factor.unconditionedVariables():
             print("Factor failed eliminate typecheck: ", factor)
             raise ValueError("Elimination variable is not an unconditioned variable " \
@@ -182,7 +175,6 @@ def eliminateWithCallTracking(callTrackingList=None):
                     "eliminationVariable:" + str(eliminationVariable) + "\n" +\
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
 
-        "*** YOUR CODE HERE ***"
         unconditioned_vars = factor.unconditionedVariables()
         conditioned_vars = factor.conditionedVariables()
         variableDomainsDict = factor.variableDomainsDict()
@@ -190,14 +182,11 @@ def eliminateWithCallTracking(callTrackingList=None):
         if eliminationVariable not in unconditioned_vars:
             raise ValueError(f"Variable {eliminationVariable} must be an unconditioned variable in the factor.")
 
-        # Create new sets of unconditioned and conditioned variables for the new factor
         new_unconditioned_vars = set(unconditioned_vars) - {eliminationVariable}
         new_factor = Factor(new_unconditioned_vars, conditioned_vars, variableDomainsDict)
 
-        # Sum over all values of the elimination variable for each assignment of other variables
         for assignment in new_factor.getAllPossibleAssignmentDicts():
             sum_prob = 0
-            # Iterate over all possible values of the elimination variable
             for val in variableDomainsDict[eliminationVariable]:
                 extended_assignment = assignment.copy()
                 extended_assignment[eliminationVariable] = val
@@ -206,7 +195,6 @@ def eliminateWithCallTracking(callTrackingList=None):
             new_factor.setProbability(assignment, sum_prob)
 
         return new_factor
-        "*** END YOUR CODE HERE ***"
 
     return eliminate
 
